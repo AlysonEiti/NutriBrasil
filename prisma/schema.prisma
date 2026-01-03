@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum MealCategory {
+  CAFE_DA_MANHA
+  LANCHE_DA_MANHA
+  ALMOCO
+  LANCHE_DA_TARDE
+  JANTAR
+  CEIA
+}
+
+enum Goal {
+  EMAGRECIMENTO
+  GANHO_MASSA
+  MANUTENCAO
+}
+
+enum Gender {
+  MASCULINO
+  FEMININO
+}
+
+model UserProfile {
+  id               String    @id @default(cuid())
+  name             String?
+  gender           Gender
+  height           Float     // em cm
+  weight           Float     // em kg
+  age              Int
+  goal             Goal
+  mealsPerDay      Int       @default(3)
+  activityLevel    Float     @default(1.2) // sedentário=1.2, leve=1.375, moderado=1.55, ativo=1.725, muito ativo=1.9
+  basalMetabolicRate Float
+  dailyCalorieNeed Float
+  targetCalories   Float
+  manualBMR        Float?    // TMB manual informado pelo usuário
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Recipe {
+  id            String       @id @default(cuid())
+  name          String
+  category      MealCategory
+  imageUrl      String?      // URL da imagem da receita
+  ingredients   String       // JSON string of ingredients
+  preparation   String       // Step-by-step instructions
+  calories      Float
+  carbs         Float        // em gramas
+  protein       Float        // em gramas
+  fat           Float        // em gramas
+  fiber         Float        @default(0) // em gramas
+  waterContent  Float        @default(0) // em ml, quando aplicável
+  servings      Int          @default(1)
+  isCustom      Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  mealPlanItems MealPlanItem[]
+}
+
+model MealPlan {
+  id          String       @id @default(cuid())
+  name        String       @default("Rotina")
+  date        DateTime     @default(now())
+  totalCalories Float      @default(0)
+  totalCarbs     Float     @default(0)
+  totalProtein   Float     @default(0)
+  totalFat       Float     @default(0)
+  totalFiber     Float     @default(0)
+  totalWater     Float     @default(0)
+  isAutomatic    Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  items          MealPlanItem[]
+}
+
+model MealPlanItem {
+  id        String   @id @default(cuid())
+  mealPlan  MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  mealPlanId String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id])
+  recipeId  String
+  category  MealCategory
+  createdAt DateTime @default(now())
+}
